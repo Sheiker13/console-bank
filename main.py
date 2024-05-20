@@ -1,22 +1,53 @@
 import sys
 
-account = {'full_name': '', 'age': 0, 'password': '', 'balance': 0, 'treshold': 0, 'transactions': []}
+account = {'full_name': '', 'age': 0, 'password': '', 'password_hash': '', 'balance': 0, 'threshold': 0, 'transactions': []}
 
 def log_error(err_msg):
     print(f"ERROR: {err_msg}")
 
+def hash_password(password):
+    try:
+        sum_codes = sum(ord(char) for char in password)
+        product_codes = 1
+        for char in password:
+            product_codes *= ord(char)
+        prime_number = 1234001651
+        sum_hash = sum_codes % prime_number
+        product_hash = product_codes % prime_number
+        return f"{sum_hash}{product_hash}"
+    except Exception as e:
+        log_error(f"Error hashing password: {e}")
+        return ""
+
+def save_password_hash():
+    try:
+        with open("passwordhash.txt", "w") as file_out:
+            file_out.write(account['password_hash'])
+    except Exception as e:
+        log_error(f"Ошибка при сохранении хеша пароля: {e}")
+
+def load_password_hash():
+    try:
+        with open("passwordhash.txt", "r") as file_in:
+            account['password_hash'] = file_in.read().strip()
+    except FileNotFoundError:
+        log_error("Файл хеша пароля не найден.")
+    except Exception as e:
+        log_error(f"Ошибка при загрузке хеша пароля: {e}")
 
 def create_account():
     try:
         account['full_name'] = input("Введите Ф.И.О: ")
         birth_year = int(input("Введите год рождения: "))
         account['age'] = 2024 - birth_year
-        account['password'] = input("Введите пароль: ")
-        print(f"Создан аккаунт: {account['full_name']} {account['age']} {"лет"}")
+        password = input("Введите пароль: ")
+        account['password'] = password
+        account['password_hash'] = hash_password(password)
+        save_password_hash()
+        print(f"Создан аккаунт: {account['full_name']} {account['age']} лет")
         print("Аккаунт успешно зарегистрирован!")
     except Exception as e:
         log_error(e)
-
 
 def deposit_money():
     try:
@@ -29,11 +60,10 @@ def deposit_money():
     except ValueError:
         log_error("Неверный формат суммы, должно быть число.")
 
-
 def withdraw_money():
     try:
-        check = input("Введите пароль: ")
-        if check == account['password']:
+        password = input("Введите пароль: ")
+        if hash_password(password) == account['password_hash']:
             amount = float(input("Введите сумму для снятия: "))
             if amount > account['balance']:
                 print("Недостаточно средств на счету.")
@@ -47,7 +77,6 @@ def withdraw_money():
     except ValueError:
         log_error("Ошибка при вводе суммы.")
 
-
 def handle_transaction():
     try:
         comment = input("Введите комментарий для транзакции: ")
@@ -58,21 +87,19 @@ def handle_transaction():
     except ValueError:
         log_error("Ошибка при вводе данных транзакции.")
 
-
-def set_treshold():
+def set_threshold():
     try:
-        treshold = float(input("Введите новый лимит транзакций: "))
-        account['treshold'] = treshold
-        print(f"Лимит транзакций установлен на: {treshold}")
+        threshold = float(input("Введите новый лимит транзакций: "))
+        account['threshold'] = threshold
+        print(f"Лимит транзакций установлен на: {threshold}")
     except ValueError:
         log_error("Ошибка при установке лимита. Введите число.")
-
 
 def apply_transactions():
     try:
         new_transactions = []
         for transaction in account['transactions']:
-            if transaction['amount'] <= account['treshold']:
+            if transaction['amount'] <= account['threshold']:
                 account['balance'] += transaction['amount']
                 print(f"Транзакция на {transaction['amount']} применена.")
             else:
@@ -81,7 +108,6 @@ def apply_transactions():
         account['transactions'] = new_transactions
     except Exception as e:
         log_error(f"Ошибка при применении транзакций: {e}")
-
 
 def show_transaction_stats():
     try:
@@ -97,7 +123,6 @@ def show_transaction_stats():
     except Exception as e:
         log_error(f"Ошибка при отображении статистики транзакций: {e}")
 
-
 def filter_by_amount():
     try:
         filter_amount = float(input("Введите сумму для фильтрации: "))
@@ -109,13 +134,11 @@ def filter_by_amount():
     except Exception as e:
         log_error(f"Ошибка при фильтрации транзакций: {e}")
 
-
 def show_filtered_transactions():
     print("Фильтрация транзакций по заданной сумме:")
     filtered_transactions = filter_by_amount()
     for transaction in filtered_transactions:
         print(f"Транзакция: Комментарий - {transaction['comment']}, Сумма - {transaction['amount']}")
-
 
 def save_to_file():
     try:
@@ -123,15 +146,14 @@ def save_to_file():
             file_out.write(f"{account['full_name']}\n")
             file_out.write(f"{account['age']}\n")
             file_out.write(f"{account['password']}\n")
+            file_out.write(f"{account['password_hash']}\n")
             file_out.write(f"{account['balance']}\n")
-            file_out.write(f"{account['treshold']}\n")
+            file_out.write(f"{account['threshold']}\n")
             for transaction in account['transactions']:
                 file_out.write(f"{transaction['comment']}:{transaction['amount']}\n")
         print("Данные аккаунта сохранены.")
     except Exception as e:
         print(f"Ошибка при сохранении данных: {e}")
-
-
 
 def load_from_file():
     try:
@@ -139,8 +161,9 @@ def load_from_file():
             account['full_name'] = file_in.readline().strip()
             account['age'] = int(file_in.readline().strip())
             account['password'] = file_in.readline().strip()
+            account['password_hash'] = file_in.readline().strip()
             account['balance'] = float(file_in.readline().strip())
-            account['treshold'] = float(file_in.readline().strip())
+            account['threshold'] = float(file_in.readline().strip())
             account['transactions'] = []
             for line in file_in:
                 comment, amount = line.strip().split(':')
@@ -151,13 +174,12 @@ def load_from_file():
     except Exception as e:
         print(f"Ошибка при загрузке данных: {e}")
 
-
-
 def main():
     print("Загрузить ваши данные?" + "\n" + "1. Да" + "\n" + "2. Нет")
     choice = int(input("Выберите вариант: "))
     if choice == 1:
         load_from_file()
+        load_password_hash()
     elif choice == 2:
         print("Начните с создания нового аккаунта.")
 
@@ -187,7 +209,7 @@ def main():
             elif cmd == 5:
                 handle_transaction()
             elif cmd == 6:
-                set_treshold()
+                set_threshold()
             elif cmd == 7:
                 apply_transactions()
             elif cmd == 8:
