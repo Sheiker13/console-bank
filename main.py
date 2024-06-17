@@ -1,6 +1,6 @@
 import sys
 
-account = {'full_name': '', 'age': 0, 'login': '', 'password': '', 'password_hash': '', 'balance': 0, 'threshold': 0, 'transactions': []}
+account = {'full_name': '', 'age': 0, 'login': '', 'password': '', 'password_hash': '', 'balance': 0, 'threshold': 0, 'transactions': [], 'pending_payments': []}
 
 def log_error(err_msg):
     print(f"ERROR: {err_msg}")
@@ -59,6 +59,7 @@ def deposit_money():
         if amount > 0:
             account['balance'] += amount
             print("Счёт успешно пополнен на сумму:", amount)
+            process_pending_payments()
         else:
             print("Сумма должна быть больше нуля.")
         save_to_file()
@@ -169,7 +170,56 @@ def show_filtered_transactions():
     for transaction in filtered_transactions:
         print(f"Транзакция: Комментарий - {transaction['comment']}, Сумма - {transaction['amount']}")
 
-def save_to_file():
+def delayed_payment():
+    try:
+        sender_login = input("Введите логин отправителя: ")
+        sender_password = input("Введите пароль отправителя: ")
+        recipient_login = input("Введите логин получателя: ")
+        amount = float(input("Введите сумму платежа: "))
+
+        load_from_file(sender_login)
+
+        if hash_password(sender_password) != account['password_hash']:
+            print("Неверный пароль!")
+            return
+
+        if account['balance'] >= amount:
+            account['balance'] -= amount
+            save_to_file()
+
+            recipient_data = load_account_data(recipient_login)
+            recipient_data['balance'] += amount
+            save_account_data(recipient_data)
+
+            print("Платеж успешно выполнен.")
+        else:
+            account['pending_payments'].append({'recipient_login': recipient_login, 'amount': amount})
+            print("Недостаточно средств. Платеж сохранен для будущего исполнения.")
+        save_to_file()
+    except Exception as e:
+        log_error(f"Ошибка при выполнении отложенного платежа: {e}")
+
+def process_pending_payments():
+    try:
+        updated_payments = []
+        for payment in account['pending_payments']:
+            recipient_login = payment['recipient_login']
+            amount = payment['amount']
+            if account['balance'] >= amount:
+                account['balance'] -= amount
+
+                recipient_data = load_account_data(recipient_login)
+                recipient_data['balance'] += amount
+                save_account_data(recipient_data)
+
+                print(f"Отложенный платеж на сумму {amount} для {recipient_login} выполнен.")
+            else:
+                updated_payments.append(payment)
+        account['pending_payments'] = updated_payments
+    except Exception as e:
+        log_error(f"Ошибка при обработке отложенных платежей: {e}")
+
+def save_account_data(account):
     try:
         with open(f"{account['login']}.account_data.txt", "w") as file_out:
             file_out.write(f"{account['full_name']}\n")
@@ -181,12 +231,15 @@ def save_to_file():
             file_out.write(f"{account['threshold']}\n")
             for transaction in account['transactions']:
                 file_out.write(f"{transaction['comment']}:{transaction['amount']}\n")
+            for payment in account['pending_payments']:
+                file_out.write(f"pending:{payment['recipient_login']}:{payment['amount']}\n")
         print("Данные аккаунта сохранены.")
     except Exception as e:
         log_error(f"Ошибка при сохранении данных: {e}")
 
-def load_from_file(login):
+def load_account_data(login):
     try:
+        account = {'full_name': '', 'age': 0, 'login': '', 'password': '', 'password_hash': '', 'balance': 0, 'threshold': 0, 'transactions': [], 'pending_payments': []}
         with open(f"{login}.account_data.txt", "r") as file_in:
             account['full_name'] = file_in.readline().strip()
             account['age'] = int(file_in.readline().strip())
@@ -195,15 +248,28 @@ def load_from_file(login):
             account['password_hash'] = file_in.readline().strip()
             account['balance'] = float(file_in.readline().strip())
             account['threshold'] = float(file_in.readline().strip())
-            account['transactions'] = []
             for line in file_in:
-                comment, amount = line.strip().split(':')
-                account['transactions'].append({'comment': comment, 'amount': float(amount)})
+                if line.startswith("pending:"):
+                    _, recipient_login, amount = line.strip().split(':')
+                    account['pending_payments'].append({'recipient_login': recipient_login, 'amount': float(amount)})
+                else:
+                    comment, amount = line.strip().split(':')
+                    account['transactions'].append({'comment': comment, 'amount': float(amount)})
         print("Данные аккаунта загружены.")
+        return account
     except FileNotFoundError:
         log_error("Файл данных не найден. Создайте новый аккаунт.")
+        return None
     except Exception as e:
         log_error(f"Ошибка при загрузке данных: {e}")
+        return None
+
+def save_to_file():
+    save_account_data(account)
+
+def load_from_file(login):
+    global account
+    account = load_account_data(login)
 
 def main():
     print("Загрузить ваши данные из файла?" + "\n" + "1. Да" + "\n" + "2. Нет")
@@ -228,7 +294,8 @@ def main():
         print("7. Применить транзакции")
         print("8. Статистика транзакций")
         print("9. Фильтр транзакций по сумме")
-        print("10. Выйти из программы")
+        print("10. Отложенный платеж")
+        print("11. Выйти из программы")
 
         try:
             cmd = int(input("Выберите номер операции: "))
@@ -253,6 +320,8 @@ def main():
             elif cmd == 9:
                 show_filtered_transactions()
             elif cmd == 10:
+                delayed_payment()
+            elif cmd == 11:
                 print("Выход из программы...")
                 break
             else:
