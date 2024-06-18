@@ -48,6 +48,8 @@ def create_account():
         save_to_file()
         print(f"Создан аккаунт: {account['full_name']} {account['age']} лет, Логин: {account['login']}")
         print("Аккаунт успешно зарегистрирован!")
+    except ValueError:
+        log_error("Неверный формат года рождения.")
     except Exception as e:
         log_error(e)
 
@@ -196,6 +198,8 @@ def delayed_payment():
             account['pending_payments'].append({'recipient_login': recipient_login, 'amount': amount})
             print("Недостаточно средств. Платеж сохранен для будущего исполнения.")
         save_to_file()
+    except ValueError:
+        log_error("Неверный формат суммы, должно быть число.")
     except Exception as e:
         log_error(f"Ошибка при выполнении отложенного платежа: {e}")
 
