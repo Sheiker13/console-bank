@@ -263,6 +263,70 @@ def load_from_file(login):
     account = load_account_data(login)
 
 
+def create_account_cli():
+    full_name = input("Введите Ф.И.О: ")
+    birth_year = int(input("Введите год рождения: "))
+    login = input("Введите логин: ")
+    password = input("Введите пароль: ")
+    print(create_account(full_name, birth_year, login, password))
+
+
+def deposit_money_cli():
+    login = input("Введите логин: ")
+    amount = float(input("Введите сумму пополнения: "))
+    print("Ваш текущий баланс: ", deposit_money(login, amount))
+
+
+def withdraw_money_cli():
+    login = input("Введите логин: ")
+    password = input("Введите пароль: ")
+    amount = float(input("Введите сумму для снятия: "))
+    print("Ваш текущий баланс: ", withdraw_money(login, password, amount))
+
+
+def show_balance_cli():
+    login = input("Введите логин: ")
+    load_from_file(login)
+    print("Ваш текущий баланс: ", account['balance'])
+
+
+def handle_transaction_cli():
+    login = input("Введите логин: ")
+    comment = input("Введите комментарий для транзакции: ")
+    amount = float(input("Введите сумму: "))
+    print(handle_transaction(login, comment, amount))
+
+
+def set_threshold_cli():
+    login = input("Введите логин: ")
+    threshold = float(input("Введите новый лимит транзакций: "))
+    print("Ваш новый лимит: ", set_threshold(login, threshold))
+
+
+def apply_transactions_cli():
+    login = input("Введите логин: ")
+    print("Ваш текущий баланс: ", apply_transactions(login))
+
+
+def show_transaction_stats_cli():
+    login = input("Введите логин: ")
+    print("Статистика транзакций: ", show_transaction_stats(login))
+
+
+def filter_by_amount_cli():
+    login = input("Введите логин: ")
+    filter_amount = float(input("Введите сумму для фильтрации: "))
+    print("Фильтр транзакций: ", filter_by_amount(login, filter_amount))
+
+
+def delayed_payment_cli():
+    sender_login = input("Введите логин отправителя: ")
+    sender_password = input("Введите пароль отправителя: ")
+    recipient_login = input("Введите логин получателя: ")
+    amount = float(input("Введите сумму платежа: "))
+    print(delayed_payment(sender_login, sender_password, recipient_login, amount))
+
+
 def main():
     print("Загрузить ваши данные из файла?" + "\n" + "1. Да" + "\n" + "2. Нет")
     choice = input("Выберите вариант: ")
@@ -292,49 +356,25 @@ def main():
         try:
             cmd = int(input("Выберите номер операции: "))
             if cmd == 1:
-                full_name = input("Введите Ф.И.О: ")
-                birth_year = int(input("Введите год рождения: "))
-                login = input("Введите логин: ")
-                password = input("Введите пароль: ")
-                print(create_account(full_name, birth_year, login, password))
+                create_account_cli()
             elif cmd == 2:
-                login = input("Введите логин: ")
-                amount = float(input("Введите сумму пополнения: "))
-                print("Ваш текущий баланс: ", deposit_money(login, amount))
+                deposit_money_cli()
             elif cmd == 3:
-                login = input("Введите логин: ")
-                password = input("Введите пароль: ")
-                amount = float(input("Введите сумму для снятия: "))
-                print("Ваш текущий баланс: ", withdraw_money(login, password, amount))
+                withdraw_money_cli()
             elif cmd == 4:
-                login = input("Введите логин: ")
-                load_from_file(login)
-                print("Ваш текущий баланс: ", account['balance'])
+                show_balance_cli()
             elif cmd == 5:
-                login = input("Введите логин: ")
-                comment = input("Введите комментарий для транзакции: ")
-                amount = float(input("Введите сумму: "))
-                print(handle_transaction(login, comment, amount))
+                handle_transaction_cli()
             elif cmd == 6:
-                login = input("Введите логин: ")
-                threshold = float(input("Введите новый лимит транзакций: "))
-                print("Ваш новый лимит: ", set_threshold(login, threshold))
+                set_threshold_cli()
             elif cmd == 7:
-                login = input("Введите логин: ")
-                print("Ваш текущий баланс: ", apply_transactions(login))
+                apply_transactions_cli()
             elif cmd == 8:
-                login = input("Введите логин: ")
-                print("Статистика транзакций: ", show_transaction_stats(login))
+                show_transaction_stats_cli()
             elif cmd == 9:
-                login = input("Введите логин: ")
-                filter_amount = float(input("Введите сумму для фильтрации: "))
-                print("Фильтр транзакций: ", filter_by_amount(login, filter_amount))
+                filter_by_amount_cli()
             elif cmd == 10:
-                sender_login = input("Введите логин отправителя: ")
-                sender_password = input("Введите пароль отправителя: ")
-                recipient_login = input("Введите логин получателя: ")
-                amount = float(input("Введите сумму платежа: "))
-                print(delayed_payment(sender_login, sender_password, recipient_login, amount))
+                delayed_payment_cli()
             elif cmd == 11:
                 print("Выход из программы...")
                 break
